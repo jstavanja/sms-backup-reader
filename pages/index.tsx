@@ -1,11 +1,140 @@
-import Head from 'next/head'
-import Image from 'next/image'
-import { Inter } from 'next/font/google'
-import styles from '@/styles/Home.module.css'
+import { Convo } from "@/components/Convo";
+import { FileDropzone } from "@/components/FileDropzone";
+import {
+  AppShell,
+  Header,
+  Container,
+  Button,
+  Stack,
+  useMantineTheme,
+  Accordion,
+} from "@mantine/core";
+import { FileWithPath } from "@mantine/dropzone";
+import { useForm, UseFormReturnType } from "@mantine/form";
+import Head from "next/head";
+import { useCallback, useEffect, useState } from "react";
+import { ContactFile, formatSmsData, SmsFile } from "../lib/utils";
 
-const inter = Inter({ subsets: ['latin'] })
+interface BackupFilesForm {
+  file?: File;
+}
+
+const readSmsFile = (rawFile: File): Promise<SmsFile> => {
+  return new Promise((resolve, reject) => {
+    var reader = new FileReader();
+    reader.readAsText(rawFile, "UTF-8");
+    reader.onload = function (evt) {
+      try {
+        const parsed = JSON.parse(evt.target?.result as string);
+
+        if (!("listSms" in parsed)) reject("File not an SMS file");
+
+        resolve(parsed);
+      } catch (err) {
+        reject(err);
+      }
+    };
+  });
+};
+
+const readContactFile = (rawFile: File): Promise<ContactFile> => {
+  return new Promise((resolve, reject) => {
+    var reader = new FileReader();
+    reader.readAsText(rawFile, "UTF-8");
+    reader.onload = function (evt) {
+      try {
+        const parsed = JSON.parse(evt.target?.result as string);
+
+        if (!("listContacts" in parsed)) reject("File not a contact file");
+
+        resolve(parsed);
+      } catch (err) {
+        reject(err);
+      }
+    };
+  });
+};
+
+interface RenderedResultProps {
+  smsForm: UseFormReturnType<BackupFilesForm>;
+  contactForm: UseFormReturnType<BackupFilesForm>;
+}
+
+const RenderedResult = ({ smsForm, contactForm }: RenderedResultProps) => {
+  const [smsFileParsed, setSmsFileParsed] = useState<SmsFile>();
+  const [contactFileParsed, setContactFileParsed] = useState<ContactFile>();
+
+  const processSmsFile = useCallback(async () => {
+    if (!smsForm.values.file) return;
+
+    const smsFileParsed = await readSmsFile(smsForm.values.file);
+
+    setSmsFileParsed(smsFileParsed);
+  }, [smsForm.values.file]);
+
+  const processContactFile = useCallback(async () => {
+    if (!contactForm.values.file) return;
+
+    const contactFileParsed = await readContactFile(contactForm.values.file);
+
+    setContactFileParsed(contactFileParsed);
+  }, [contactForm.values.file]);
+
+  useEffect(() => {
+    processContactFile();
+  }, [contactForm.values.file, processContactFile]);
+
+  useEffect(() => {
+    processSmsFile();
+  }, [smsForm.values.file, processSmsFile]);
+
+  if (!smsForm.values.file || !contactForm.values.file)
+    return <div>No files found.</div>;
+
+  if (!smsFileParsed)
+    return <div>Parsing SMS file (or something went wrong).</div>;
+  if (!contactFileParsed)
+    return <div>Parsing Contact File (or something went wrong).</div>;
+
+  return (
+    <Accordion>
+      {Object.entries(formatSmsData(smsFileParsed, contactFileParsed)).map(
+        ([person, convo]) => {
+          return (
+            <Accordion.Item value={person} key={person}>
+              <Accordion.Control>{person}</Accordion.Control>
+              <Accordion.Panel>
+                <Convo convo={convo} convoWith={person} />
+              </Accordion.Panel>
+            </Accordion.Item>
+          );
+        }
+      )}
+    </Accordion>
+  );
+};
 
 export default function Home() {
+  const smsForm = useForm<BackupFilesForm>();
+  const contactForm = useForm<BackupFilesForm>();
+  const [shouldRenderResult, setShouldRenderResult] = useState(false);
+
+  const setSMSFileIntoValues = async (files: FileWithPath[]) => {
+    if (files.length === 0) return;
+    smsForm.setFieldValue("file", files[0]);
+  };
+
+  const setContactFileIntoValues = async (files: FileWithPath[]) => {
+    if (files.length === 0) return;
+    contactForm.setFieldValue("file", files[0]);
+  };
+
+  const theme = useMantineTheme();
+
+  const renderParsed = () => {
+    setShouldRenderResult(true);
+  };
+
   return (
     <>
       <Head>
@@ -14,110 +143,57 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className={styles.main}>
-        <div className={styles.description}>
-          <p>
-            Get started by editing&nbsp;
-            <code className={styles.code}>pages/index.tsx</code>
-          </p>
-          <div>
-            <a
-              href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              By{' '}
-              <Image
-                src="/vercel.svg"
-                alt="Vercel Logo"
-                className={styles.vercelLogo}
-                width={100}
-                height={24}
-                priority
+      <main>
+        <AppShell
+          padding="md"
+          header={
+            <Header height={60} p="xs">
+              SMS Backup & Restore Reader
+            </Header>
+          }
+          styles={(theme) => ({
+            main: {
+              backgroundColor:
+                theme.colorScheme === "dark"
+                  ? theme.colors.dark[8]
+                  : theme.colors.gray[0],
+            },
+          })}
+        >
+          <Container>
+            <h1>Upload backup files</h1>
+
+            <Stack>
+              <FileDropzone
+                label="SMS"
+                form={smsForm}
+                onDrop={setSMSFileIntoValues}
+                theme={theme}
               />
-            </a>
-          </div>
-        </div>
 
-        <div className={styles.center}>
-          <Image
-            className={styles.logo}
-            src="/next.svg"
-            alt="Next.js Logo"
-            width={180}
-            height={37}
-            priority
-          />
-          <div className={styles.thirteen}>
-            <Image
-              src="/thirteen.svg"
-              alt="13"
-              width={40}
-              height={31}
-              priority
-            />
-          </div>
-        </div>
+              <FileDropzone
+                label="Contacts"
+                form={contactForm}
+                onDrop={setContactFileIntoValues}
+                theme={theme}
+              />
 
-        <div className={styles.grid}>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Docs <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Find in-depth information about Next.js features and&nbsp;API.
-            </p>
-          </a>
+              <Button
+                type="submit"
+                onClick={() => {
+                  renderParsed();
+                }}
+              >
+                Print contents
+              </Button>
+            </Stack>
 
-          <a
-            href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Learn <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Learn about Next.js in an interactive course with&nbsp;quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Templates <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Discover and deploy boilerplate example Next.js&nbsp;projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Deploy <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Instantly deploy your Next.js site to a shareable URL
-              with&nbsp;Vercel.
-            </p>
-          </a>
-        </div>
+            {shouldRenderResult && (
+              <RenderedResult smsForm={smsForm} contactForm={contactForm} />
+            )}
+          </Container>
+        </AppShell>
       </main>
     </>
-  )
+  );
 }
