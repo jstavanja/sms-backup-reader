@@ -27,7 +27,8 @@ const readSmsFile = (rawFile: File): Promise<SmsFile> => {
       try {
         const parsed = JSON.parse(evt.target?.result as string);
 
-        if (!("listSms" in parsed)) reject("File not an SMS file");
+        if (!("listSms" in parsed))
+          return reject(new Error("File not an SMS file"));
 
         resolve(parsed);
       } catch (err) {
@@ -45,7 +46,11 @@ const readContactFile = (rawFile: File): Promise<ContactFile> => {
       try {
         const parsed = JSON.parse(evt.target?.result as string);
 
-        if (!("listContacts" in parsed)) reject("File not a contact file");
+        console.log({ parsed });
+        console.log("listCallLogs" in parsed);
+
+        if (!("listContacts" in parsed))
+          return reject(new Error("File not a contact file"));
 
         resolve(parsed);
       } catch (err) {
@@ -62,39 +67,66 @@ interface RenderedResultProps {
 
 const RenderedResult = ({ smsForm, contactForm }: RenderedResultProps) => {
   const [smsFileParsed, setSmsFileParsed] = useState<SmsFile>();
+  const [smsError, setSmsError] = useState<string | null>();
+  const [contactError, setContactError] = useState<string | null>();
   const [contactFileParsed, setContactFileParsed] = useState<ContactFile>();
 
   const processSmsFile = useCallback(async () => {
     if (!smsForm.values.file) return;
 
-    const smsFileParsed = await readSmsFile(smsForm.values.file);
-
+    let smsFileParsed: SmsFile;
+    try {
+      smsFileParsed = await readSmsFile(smsForm.values.file);
+    } catch (err) {
+      return setSmsError((err as Error).message);
+    }
+    setSmsError(null);
     setSmsFileParsed(smsFileParsed);
   }, [smsForm.values.file]);
 
   const processContactFile = useCallback(async () => {
     if (!contactForm.values.file) return;
 
-    const contactFileParsed = await readContactFile(contactForm.values.file);
+    let contactFileParsed: ContactFile;
+    try {
+      contactFileParsed = await readContactFile(contactForm.values.file);
+    } catch (err) {
+      console.log("encountered contact error");
 
+      return setContactError((err as Error).message);
+    }
+
+    setContactError(null);
     setContactFileParsed(contactFileParsed);
   }, [contactForm.values.file]);
 
   useEffect(() => {
     processContactFile();
-  }, [contactForm.values.file, processContactFile]);
+  }, [processContactFile]);
 
   useEffect(() => {
     processSmsFile();
-  }, [smsForm.values.file, processSmsFile]);
+  }, [processSmsFile]);
 
   if (!smsForm.values.file || !contactForm.values.file)
     return <div>No files found.</div>;
 
-  if (!smsFileParsed)
-    return <div>Parsing SMS file (or something went wrong).</div>;
-  if (!contactFileParsed)
-    return <div>Parsing Contact File (or something went wrong).</div>;
+  if (smsError) {
+    return (
+      <div>Reading the SMS file was not successful. Reason: {smsError}</div>
+    );
+  }
+
+  if (contactError) {
+    return (
+      <div>
+        Reading the Contact file was not successful. Reason: {contactError}
+      </div>
+    );
+  }
+
+  if (!smsFileParsed) return <div>Parsing SMS file.</div>;
+  if (!contactFileParsed) return <div>Parsing Contact File.</div>;
 
   return (
     <Accordion>
@@ -132,6 +164,7 @@ export default function Home() {
   const theme = useMantineTheme();
 
   const renderParsed = () => {
+    setShouldRenderResult(false);
     setShouldRenderResult(true);
   };
 
