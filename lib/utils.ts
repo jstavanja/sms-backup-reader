@@ -65,7 +65,7 @@ export const formatSmsData = (smsFile: SmsFile, contactFile: ContactFile) => {
   const result: Record<string, SmsOutput[]> = {};
 
   smsFile.listSms.forEach((sms) => {
-    const sender = sms.type === 1 ? "other" : "self";
+    const sender = sms.type === 2 ? "self" : "other";
 
     const convoWith = resolveAddressToContactName(sms.adress, contactFile);
 
