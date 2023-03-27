@@ -104,7 +104,7 @@ const RenderedResult = ({ smsForm, contactForm }: RenderedResultProps) => {
             <Accordion.Item value={person} key={person}>
               <Accordion.Control>{person}</Accordion.Control>
               <Accordion.Panel>
-                <Convo convo={convo} convoWith={person} />
+                <Convo convo={convo.reverse()} convoWith={person} />
               </Accordion.Panel>
             </Accordion.Item>
           );

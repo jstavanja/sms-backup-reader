@@ -9,7 +9,7 @@ interface ConvoProps {
 export const Convo = ({ convo, convoWith }: ConvoProps) => {
   return (
     <div>
-      {convo.reverse().map((message) => {
+      {convo.map((message) => {
         if (message.from === "other") {
           return (
             <Card
