@@ -67,7 +67,7 @@ export const FileDropzone = ({
               <span>Using file: {form.values["file"].name}</span>
             )}
             {!form.values["file"] && !form.errors["file"] && (
-              <span>Drag {label} backup file here.</span>
+              <span>{label}</span>
             )}
             {form.errors["file"] && (
               <Text
@@ -75,11 +75,6 @@ export const FileDropzone = ({
               >
                 {form.errors["files"]}
               </Text>
-            )}
-          </Text>
-          <Text size="sm" color="dimmed" inline mt={7}>
-            {!form.errors["file"] && (
-              <Text>Click to upload a different file.</Text>
             )}
           </Text>
         </div>

@@ -1,0 +1,16 @@
+{
+	"app_name": "SMS Backup & Restore Bralnik",
+	"Upload backup files": "Naloži backup datoteke",
+	"Print contents": "Prikaži podatke",
+	"Contacts": "Stiki",
+	"Drag or click to upload the SMS file": "Spusti ali klikni, da naložiš datoteko z SMS-i",
+	"Drag or click to upload the contacts file": "Spusti ali klikni, da naložiš datoteko s kontakti",
+	"Error reading the contact file. Check whether you're providing the right file.": "Napaka pri branju datoteke s kontakti. Preverite, če nalagate pravo datoteko.",
+	"Error reading the SMS file. Check whether you're providing the right file.": "Napaka pri branju datoteke z SMS sporočili. Preverite, če nalagate pravo datoteko.",
+	"No files found": "Nobena datoteka ni bila naložena",
+	"Parsing SMS file": "Prebiram datoteko z SMS sporočili",
+	"Parsing Contact File": "Prebiram datoteko s kontakti",
+	"conversation_title": "Pogovor z osebo {{person}}",
+	"Person": "Oseba",
+	"Number of messages": "Število sporočil"
+}

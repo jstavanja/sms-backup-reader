@@ -1,5 +1,6 @@
 import { Convo } from "@/components/Convo";
 import { FileDropzone } from "@/components/FileDropzone";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import {
   AppShell,
   Header,
@@ -9,10 +10,15 @@ import {
   useMantineTheme,
   Accordion,
   Table,
+  Group,
+  Flex,
 } from "@mantine/core";
 import { FileWithPath } from "@mantine/dropzone";
 import { useForm, UseFormReturnType } from "@mantine/form";
 import { modals } from "@mantine/modals";
+import { GetStaticProps } from "next";
+import { useTranslation } from "next-i18next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import Head from "next/head";
 import { useCallback, useEffect, useState } from "react";
 import { ContactFile, formatSmsData, SmsFile } from "../lib/utils";
@@ -30,7 +36,7 @@ const readSmsFile = (rawFile: File): Promise<SmsFile> => {
         const parsed = JSON.parse(evt.target?.result as string);
 
         if (!("listSms" in parsed))
-          return reject(new Error("File not an SMS file"));
+          return reject(new Error("File not an SMS file")); // TODO, make this handled with i18n in the UI
 
         resolve(parsed);
       } catch (err) {
@@ -52,7 +58,7 @@ const readContactFile = (rawFile: File): Promise<ContactFile> => {
         console.log("listCallLogs" in parsed);
 
         if (!("listContacts" in parsed))
-          return reject(new Error("File not a contact file"));
+          return reject(new Error("File not a contact file")); // TODO, make this handled with i18n in the UI
 
         resolve(parsed);
       } catch (err) {
@@ -68,6 +74,7 @@ interface RenderedResultProps {
 }
 
 const RenderedResult = ({ smsForm, contactForm }: RenderedResultProps) => {
+  const { t } = useTranslation();
   const [smsFileParsed, setSmsFileParsed] = useState<SmsFile>();
   const [smsError, setSmsError] = useState<string | null>();
   const [contactError, setContactError] = useState<string | null>();
@@ -80,11 +87,15 @@ const RenderedResult = ({ smsForm, contactForm }: RenderedResultProps) => {
     try {
       smsFileParsed = await readSmsFile(smsForm.values.file);
     } catch (err) {
-      return setSmsError((err as Error).message);
+      return setSmsError(
+        t(
+          "Error reading the SMS file. Check whether you're providing the right file."
+        )
+      );
     }
     setSmsError(null);
     setSmsFileParsed(smsFileParsed);
-  }, [smsForm.values.file]);
+  }, [smsForm.values.file, t]);
 
   const processContactFile = useCallback(async () => {
     if (!contactForm.values.file) return;
@@ -93,14 +104,16 @@ const RenderedResult = ({ smsForm, contactForm }: RenderedResultProps) => {
     try {
       contactFileParsed = await readContactFile(contactForm.values.file);
     } catch (err) {
-      console.log("encountered contact error");
-
-      return setContactError((err as Error).message);
+      return setContactError(
+        t(
+          "Error reading the contact file. Check whether you're providing the right file."
+        )
+      );
     }
 
     setContactError(null);
     setContactFileParsed(contactFileParsed);
-  }, [contactForm.values.file]);
+  }, [contactForm.values.file, t]);
 
   useEffect(() => {
     processContactFile();
@@ -111,41 +124,35 @@ const RenderedResult = ({ smsForm, contactForm }: RenderedResultProps) => {
   }, [processSmsFile]);
 
   if (!smsForm.values.file || !contactForm.values.file)
-    return <div>No files found.</div>;
+    return <div>{t("No files found")}</div>;
 
   if (smsError) {
-    return (
-      <div>Reading the SMS file was not successful. Reason: {smsError}</div>
-    );
+    return <div>{smsError}</div>;
   }
 
   if (contactError) {
-    return (
-      <div>
-        Reading the Contact file was not successful. Reason: {contactError}
-      </div>
-    );
+    return <div>{contactError}</div>;
   }
 
-  if (!smsFileParsed) return <div>Parsing SMS file.</div>;
-  if (!contactFileParsed) return <div>Parsing Contact File.</div>;
+  if (!smsFileParsed) return <div>{t("Parsing SMS file")}</div>;
+  if (!contactFileParsed) return <div>{t("Parsing Contact File")}</div>;
 
   return (
     <Table>
       <thead>
         <tr>
-          <th>Person</th>
-          <th>Number of messages</th>
+          <th>{t("Person")}</th>
+          <th>{t("Number of messages")}</th>
         </tr>
       </thead>
       <tbody>
         {Object.entries(formatSmsData(smsFileParsed, contactFileParsed)).map(
           ([person, convo]) => {
             const openModal = () =>
-              modals.openConfirmModal({
-                title: `Conversation with ${person}`,
+              modals.open({
+                title: t("conversation_title", { person }),
                 children: <Convo convo={convo.reverse()} convoWith={person} />,
-                labels: { confirm: "Confirm", cancel: "Cancel" },
+                size: "lg",
               });
 
             return (
@@ -164,6 +171,7 @@ const RenderedResult = ({ smsForm, contactForm }: RenderedResultProps) => {
 };
 
 export default function Home() {
+  const { t } = useTranslation();
   const smsForm = useForm<BackupFilesForm>();
   const contactForm = useForm<BackupFilesForm>();
   const [shouldRenderResult, setShouldRenderResult] = useState(false);
@@ -188,7 +196,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Create Next App</title>
+        <title>{t("app_name")}</title>
         <meta name="description" content="Generated by create next app" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
@@ -198,7 +206,10 @@ export default function Home() {
           padding="md"
           header={
             <Header height={60} p="xs">
-              SMS Backup & Restore Reader
+              <Flex justify={"space-between"}>
+                <span>{t("app_name")}</span>
+                <LanguageSwitcher />
+              </Flex>
             </Header>
           }
           styles={(theme) => ({
@@ -211,18 +222,18 @@ export default function Home() {
           })}
         >
           <Container>
-            <h1>Upload backup files</h1>
+            <h1>{t("Upload backup files")}</h1>
 
             <Stack>
               <FileDropzone
-                label="SMS"
+                label={t("Drag or click to upload the SMS file")}
                 form={smsForm}
                 onDrop={setSMSFileIntoValues}
                 theme={theme}
               />
 
               <FileDropzone
-                label="Contacts"
+                label={t("Drag or click to upload the contacts file")}
                 form={contactForm}
                 onDrop={setContactFileIntoValues}
                 theme={theme}
@@ -234,7 +245,7 @@ export default function Home() {
                   renderParsed();
                 }}
               >
-                Print contents
+                {t("Print contents")}
               </Button>
             </Stack>
 
@@ -247,3 +258,9 @@ export default function Home() {
     </>
   );
 }
+
+export const getStaticProps: GetStaticProps = async ({ locale }) => ({
+  props: {
+    ...(await serverSideTranslations(locale ?? "en", ["common"])),
+  },
+});
