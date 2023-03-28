@@ -8,9 +8,11 @@ import {
   Stack,
   useMantineTheme,
   Accordion,
+  Table,
 } from "@mantine/core";
 import { FileWithPath } from "@mantine/dropzone";
 import { useForm, UseFormReturnType } from "@mantine/form";
+import { modals } from "@mantine/modals";
 import Head from "next/head";
 import { useCallback, useEffect, useState } from "react";
 import { ContactFile, formatSmsData, SmsFile } from "../lib/utils";
@@ -129,20 +131,35 @@ const RenderedResult = ({ smsForm, contactForm }: RenderedResultProps) => {
   if (!contactFileParsed) return <div>Parsing Contact File.</div>;
 
   return (
-    <Accordion>
-      {Object.entries(formatSmsData(smsFileParsed, contactFileParsed)).map(
-        ([person, convo]) => {
-          return (
-            <Accordion.Item value={person} key={person}>
-              <Accordion.Control>{person}</Accordion.Control>
-              <Accordion.Panel>
-                <Convo convo={convo.reverse()} convoWith={person} />
-              </Accordion.Panel>
-            </Accordion.Item>
-          );
-        }
-      )}
-    </Accordion>
+    <Table>
+      <thead>
+        <tr>
+          <th>Person</th>
+          <th>Number of messages</th>
+        </tr>
+      </thead>
+      <tbody>
+        {Object.entries(formatSmsData(smsFileParsed, contactFileParsed)).map(
+          ([person, convo]) => {
+            const openModal = () =>
+              modals.openConfirmModal({
+                title: `Conversation with ${person}`,
+                children: <Convo convo={convo.reverse()} convoWith={person} />,
+                labels: { confirm: "Confirm", cancel: "Cancel" },
+              });
+
+            return (
+              <tr key={person}>
+                <td>
+                  <Button onClick={openModal}>{person}</Button>
+                </td>
+                <td>{convo.length}</td>
+              </tr>
+            );
+          }
+        )}
+      </tbody>
+    </Table>
   );
 };
 
