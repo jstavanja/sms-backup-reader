@@ -12,5 +12,6 @@
 	"Parsing Contact File": "Prebiram datoteko s kontakti",
 	"conversation_title": "Pogovor z osebo {{person}}",
 	"Person": "Oseba",
-	"Number of messages": "Število sporočil"
+	"Number of messages": "Število sporočil",
+	"Using file: ": "Uporabljam datoteko:"
 }

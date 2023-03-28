@@ -1,12 +1,38 @@
 import { SmsOutput } from "@/lib/utils";
-import { Badge, Card, Group, Text } from "@mantine/core";
+import { Badge, Card, Group, Stack, Text } from "@mantine/core";
+import { useEffect, useRef } from "react";
 
 interface ConvoProps {
   convo: SmsOutput[];
   convoWith: string;
 }
 
+const dateOptions = {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+} as const;
+
+const DateTimeDisplay = ({ date }: { date: Date }) => {
+  return (
+    <Stack spacing={"xs"}>
+      <Badge color="pink" variant="light">
+        {date.toLocaleString("sl-SI", dateOptions)}
+      </Badge>
+      <Badge color="white" variant="light">
+        {date.toLocaleTimeString("sl-SI")}
+      </Badge>
+    </Stack>
+  );
+};
+
 export const Convo = ({ convo, convoWith }: ConvoProps) => {
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [convo]);
+
   return (
     <div>
       {convo.map((message) => {
@@ -22,11 +48,9 @@ export const Convo = ({ convo, convoWith }: ConvoProps) => {
             >
               <Group position="apart" mt="md" mb="xs">
                 <Text weight={500}>{convoWith}</Text>
-                <Badge color="pink" variant="light">
-                  {message.date.toLocaleString()}
-                </Badge>
+                <DateTimeDisplay date={message.date} />
               </Group>
-
+              <hr />
               <Text size="sm" color="dimmed">
                 {message.text}
               </Text>
@@ -48,17 +72,16 @@ export const Convo = ({ convo, convoWith }: ConvoProps) => {
               <Text color="white" weight={500}>
                 Me
               </Text>
-              <Badge color="blue" variant="light">
-                {message.date.toLocaleString()}
-              </Badge>
+              <DateTimeDisplay date={message.date} />
             </Group>
-
+            <hr />
             <Text size="sm" color="white">
               {message.text}
             </Text>
           </Card>
         );
       })}
+      <div ref={messagesEndRef} />
     </div>
   );
 };

@@ -2,6 +2,7 @@ import { Group, MantineTheme, Text } from "@mantine/core";
 import { Dropzone, DropzoneProps } from "@mantine/dropzone";
 import { UseFormReturnType } from "@mantine/form";
 import { IconUpload, IconX, IconFileInfo } from "@tabler/icons-react";
+import { t } from "i18next";
 
 export interface BackupFilesForm {
   file?: File;
@@ -64,7 +65,10 @@ export const FileDropzone = ({
         <div>
           <Text size="xl" inline>
             {form.values["file"] && !form.errors["file"] && (
-              <span>Using file: {form.values["file"].name}</span>
+              <span>
+                {t("Using file: ")}
+                {form.values["file"].name}
+              </span>
             )}
             {!form.values["file"] && !form.errors["file"] && (
               <span>{label}</span>

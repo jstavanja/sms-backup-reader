@@ -151,7 +151,7 @@ const RenderedResult = ({ smsForm, contactForm }: RenderedResultProps) => {
             const openModal = () =>
               modals.open({
                 title: t("conversation_title", { person }),
-                children: <Convo convo={convo.reverse()} convoWith={person} />,
+                children: <Convo convo={convo} convoWith={person} />,
                 size: "lg",
               });
 

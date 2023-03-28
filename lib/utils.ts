@@ -73,7 +73,7 @@ export const formatSmsData = (smsFile: SmsFile, contactFile: ContactFile) => {
       result[convoWith] = [];
     }
 
-    result[convoWith].push({
+    result[convoWith].unshift({
       from: sender,
       text: sms.body,
       date: new Date(sms.time),
